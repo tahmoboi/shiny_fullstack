@@ -1,0 +1,241 @@
+---
+title: "Shiny DS#5"
+author: "Tahmid Hossain Bhuiyan"
+date: "`r Sys.Date()`"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: columns
+---
+
+
+# **Beginning**
+
+## Left Column
+
+### **Project Introduction**
+
+Sewanee is a top liberal arts college in the US. It is a home to students from over 30 different countries and is consistently ranked 
+among the top universities for international student outcomes. This project is about the major choices of the international Sewanee students, what motivated them to take it and what are they expecting to do after graduation. 
+
+
+Another key ingredient that I added to better understand major choices is the confidence parameter. Since Sewanee is a liberal arts college, students can choose a major in their Freshmen year and can revisit that choice in the years that follow. This confidence parameter makes confidence quantifiable and illustrates how confidence shifts from Freshmen year to Senior year.
+
+
+### **How to Navigate this Dashboard**
+
+This dashboard is to be read from left column to right column on each tab. Left column top row to left column bottom row and then right column top row to right column bottom row. Afterwards, you go to the next tab.
+
+There are 3 tabs. Each tab with a core theme and 4 boxes inside.
+
+
+*Data Source: Primary data collected via the survey instrument by
+            Tahmid Hossain Bhuiyan (Class of 2029) as part of a data story#5
+            project for ESCI 222 class. Data is stored
+            locally and used solely for academic research purposes.*
+
+## Right Column
+
+### **Major Choice Plot**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=5, fig.height=7}
+library(flexdashboard)
+library(dplyr)
+library(knitr)
+library(shiny)
+library(lubridate)
+library(DT)
+library(ggplot2)
+library(forcats)
+library(plotly)
+library(stringr)
+
+# reading csv file from interactive data entry shiny app
+major <- read.csv("~/Documents/Freshman_Spring/ESCI_Class/repos/shiny_fullstack/Shiny_data_entry/app_data.csv", header= FALSE) 
+#header false so that we can add the header names as column names.
+
+#Fixing column names since shiny didn't add them
+colnames(major) <- c('Entry Time','Country','Major','Influence','Year','Post Grad','Confidence')
+
+# Data cleaning to find top major choices
+topmaj <- major %>% group_by(Major) %>% 
+  summarize(Total=n()) %>% 
+  arrange(desc(Total)) %>% 
+  slice(1:5)
+
+
+m <- ggplot(topmaj,
+            aes(x=fct_reorder(str_wrap(Major, width = 10),-Total), #str_wrap wraps the x elements in X axis within 10 unit width so                                                                       that it doesn't collide with other elements
+                y=Total,
+                fill=Major,
+                text= paste0('Major: ', Major, '<br>',  #text that needs to be showed when someone hovers around the graph
+                             'Count: ',Total)))+
+  geom_col() +
+  labs(title = "Most Popular Major Choices Among International Students",
+       subtitle = "Top 5 declared or intended majors",
+       x = "Major",
+       y = "Number of Students")+
+  theme_minimal()
+
+ggplotly(m, tooltip="text") %>% #only show the text instead of everything inside aes()
+  layout(showlegend=FALSE) #legend should not show
+```
+
+### **Insights from Major Choice Plot**
+
+From the plot above, it is evident that most international students consider STEM major choices more than Non-Stem ones. 4 of the top 5 major choices i.e. Computer Science, Economics, Mathematics, Biochemistry are STEM designated majors with the only contrast being International and Global Studies which is ranked 3rd in the popularity poll.
+
+Economics stands at the top while Computer Science is ranked 2nd in major choice popularity.
+
+# **Motivations & Plans**
+
+## Left Column
+
+### **Motivation Plot**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7, fig.height=5}
+library(flexdashboard)
+library(dplyr)
+library(knitr)
+library(shiny)
+library(lubridate)
+library(DT)
+library(ggplot2)
+library(forcats)
+
+# Data Cleaning for top influences behind major selection
+topmot <- major %>% group_by(Influence) %>% 
+  summarize(Total=n()) %>% 
+  arrange(desc(Total))
+
+# ggplot with fct_reorder for arrangement of the data in the graph
+ggplot(topmot,
+       aes(x=fct_reorder(Influence,-Total),
+       y=Total,
+       fill=Influence))+
+  geom_col(show.legend = FALSE) + #Show legend false since it takes a lot of space on the graph and doesn't add much
+  labs(title = "What Drives Major Selection?",
+       subtitle = "Self-reported primary motivations among international students",
+       x = "Motivating Factor",
+       y = "Number of Students",
+       caption = "Source: Primary survey data, ESCI 222 | Sewanee, 2025")+
+  theme_minimal()
+
+```
+
+### **Insights on the Motivation Plot**
+
+Most International students are motivated by salary potential and job security. Passion is the 3rd most influential factor in their major selection. Under the US immigration law, internationals can only work 1 year after graduation but if they are in STEM designated majors, they can extend that to three years. In these three years, they can apply for an H1B visa only when they have a secured job and the employer is willing to sponsor the H1B visa. 
+
+This law is a significant factor in both Major selection and Motivation. Finding a job and getting an H1B within a year is tough so STEM fields gives them two more years and majors like Economics and Computer Science has higher job security and salary potential if properly planned which gives these two majors an edge over all other majors in an International Student's List. 
+
+
+
+## Right Column
+
+### **Plot for Post-Grad choices**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7, fig.height=5}
+library(flexdashboard)
+library(dplyr)
+library(knitr)
+library(shiny)
+library(lubridate)
+library(DT)
+library(ggplot2)
+library(plotly)
+
+# Data cleaning for post grad choices
+postgrad <- major %>% group_by(`Post Grad`) %>% 
+  summarize(Total=n()) %>% 
+  arrange(desc(Total))
+
+
+ggplot(postgrad,
+       aes(x="",
+           y=Total,
+           fill=`Post Grad`))+
+  geom_bar(stat='identity')+  # there is no pie chart in ggplot so first we make a bar chart and then make the bar chart into a pie                                    through angle transformation
+  coord_polar(theta="y")+
+  labs(
+  title = "Life After Sewanee",
+  subtitle = "Post-graduation intentions among international students",
+  caption = "Source: Primary survey data, ESCI 222 | Sewanee, 2025") +
+  theme_void()
+
+```
+
+### **Insights on Post-grad choices**
+
+Most international students want to go to grad school right after graduation from Sewanee. Second most popular choice after graduation is holding a job. As an international student, we understood from major choice and motivation, how important it is to have a job after graduation. However, although salary potential and Job security stood as the top 2 for influencing major choice, grad school outranking jobs is genuinely surprising. This proves that right after graduation, students don't want to join workforce but instead, they want to learn more, grow more before they commit to a job. 
+
+It shows how much international students are willing to better themselves. We can speculate that, right after graduation these students want to hone specific skillsets through a higher education, focus on one particular aspect of their major and then increase their chances of landing a job later on.
+
+A small portion wants to start their own business and the rest are still undecided.
+
+
+
+# **Confidence & Conclusion**
+
+## Left
+
+### **Confidence Plot (Freshmen to Senior)**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7, fig.height=5}
+library(flexdashboard)
+library(dplyr)
+library(knitr)
+library(shiny)
+library(lubridate)
+library(DT)
+library(ggplot2)
+library(forcats)
+
+#Boxplot for understanding where the meadian, range of the conifidence data resides
+ggplot(major,
+       aes(x=fct_reorder(Year,Confidence),
+           y=Confidence,
+           fill=Year))+
+  geom_boxplot(show.legend = FALSE) +
+  labs( title = "How Confident Are International Students in Their Majors?",
+        subtitle = "Self-reported confidence by academic year (1 = not confident, 5 = very confident)",
+        x = "Academic Year",
+        y = "Confidence Score",
+        caption = "Source: Primary survey data, ESCI 222 | Sewanee, 2025")+
+  theme_minimal()
+
+```
+
+### **Confidence data**
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7, fig.height=5}
+library(flexdashboard)
+library(dplyr)
+library(knitr)
+library(shiny)
+library(lubridate)
+library(DT)
+library(ggplot2)
+
+confid <- major %>% group_by(Year) %>% 
+  summarize(confidence=mean(Confidence)) %>% 
+  arrange(desc(confidence))
+
+confid %>% kable() # for beautification of the graph
+
+```
+
+
+## Right
+
+### **Insights from Confidence Data and Plot**
+
+On a scale of 1-5, Seniors are most confident with their majors. Which is obvious considering they have had 3 years of exploration and then they decided to choose a major. On the other hand, Freshmen are the least confident since they are still learning.
+
+The key insight can be found in Sophomores and Juniors. One would assume that juniors would obviously be more confident than sophomores which is true but the gap between juniors and sophomores is extremely slim to confidently say that. When sophomores choose their major, they have already explored a year and then went on to choose. But juniors have already chosen and is now questioning whether it was a right one. They have explored a year and committed a year as well. Before their senior year, they are critically thinking and finding ways to implement their major choice in their life after graduation. I believe this thinking stage is the core reason they are so confident in their senior year.
+
+### **Conclusion box**
+
+Overall, major choice for international students is highly dependent on factors beyond passion. Intuitively, passion might seem like a sole driver for major choice but for international students, it tells only part of the story.   Factors like salary and job security play key roles. Immigration law pushes them to consider majors in STEM designated fields more than the Non-STEM ones. 
+
+Students are eager to enter the workforce, but most prefer to pursue advanced education first in their field of choice, build expertise and then enter the workforce with a stronger hand. These students come to an LAC like Sewanee as a freshmen with low confidence on their majors and graduate with more confidence and more courage, becoming the best version of themselves.
+
+Lastly, what this data quietly says is that international students are not just choosing majors. They are planning a survival strategy in a country that gives them very little margin for error, and doing it with remarkable clarity.
