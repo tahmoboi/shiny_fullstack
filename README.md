@@ -31,4 +31,5 @@ Tab 3 Confidence & Conclusion
 - Right column shows insights generated from the confidence plot and the ultimate conclusion of the data story/project.
 
 Part 3: Screenshare
+
 Link to screenshare: 
